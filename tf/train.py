@@ -37,11 +37,11 @@ def train(
 			summary_path: path where to save logs for TensorBoard
 
 	"""
-	train_img_path = os.path.join(imagenet_path, 'ILSVRC2012_img_train')
+	train_img_path = os.path.join(imagenet_path, 'train')
 	ts_size = tu.imagenet_size(train_img_path)
 	num_batches = int(float(ts_size) / batch_size)
 
-	wnid_labels, _ = tu.load_imagenet_meta(os.path.join(imagenet_path, 'data/meta.mat'))
+	wnid_labels, _ = tu.load_imagenet_meta(os.path.join(imagenet_path, 'data\\meta.mat'))
 
 	x = tf.placeholder(tf.float32, [None, 224, 224, 3])
 	y = tf.placeholder(tf.float32, [None, 1000])
@@ -60,7 +60,7 @@ def train(
 
 	# cross-entropy and weight decay
 	with tf.name_scope('cross_entropy'):
-		cross_entropy = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=pred, labels=y_b, name='cross-entropy'))
+		cross_entropy = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(logits=pred, labels=y_b, name='cross-entropy'))
 	
 	with tf.name_scope('l2_loss'):
 		l2_loss = tf.reduce_sum(lmbda * tf.stack([tf.nn.l2_loss(v) for v in tf.get_collection('weights')]))
@@ -87,16 +87,18 @@ def train(
 	merged = tf.summary.merge_all()
 
 	# checkpoint saver
-	saver = tf.train.Saver()
+	saver = tf.train.Saver(max_to_keep=5)
 
 	coord = tf.train.Coordinator()
-
-	#init = tf.initialize_all_variables()
+	
 	init = tf.global_variables_initializer()
+	
+	config = tf.ConfigProto(allow_soft_placement=True,log_device_placement=False)
+	config.gpu_options.allow_growth = True
 
-	with tf.Session(config=tf.ConfigProto()) as sess:
+	with tf.Session(config=config) as sess:
 		if resume:
-			saver.restore(sess, os.path.join(ckpt_path, 'alexnet-cnn.ckpt'))
+			saver.restore(sess, os.path.join(ckpt_path, 'alexnet-cnn.ckpt-#####'))
 		else:
 			sess.run(init)
 
@@ -107,7 +109,7 @@ def train(
 				sess.run(enqueue_op, feed_dict={x: im,y: l})
 
 		# creating and starting parallel threads to fill the queue
-		num_threads = 3
+		num_threads = 12
 		for i in range(num_threads):
 			t = threading.Thread(target=enqueue_batches)
 			t.setDaemon(True)
@@ -125,28 +127,29 @@ def train(
 
 				# decaying learning rate
 				if step == 170000 or step == 350000:
-					learning_rate /= 10
+					learning_rate = learning_rate / 10
+					print ('decay lr by 10')
 
 				# display current training informations
 				if step % display_step == 0:
 					c, a = sess.run([loss, accuracy], feed_dict={lr: learning_rate, keep_prob: 1.0})
-					print ('Epoch: {:03d} Step/Batch: {:09d} --- Loss: {:.7f} Training accuracy: {:.4f}'.format(e, step, c, a))
+					print ('Epoch: {:03d} Step/Batch: {:09d} --- Loss: {:.7f} Training accuracy: {:.4f} LR: {:.10f}'.format(e, step, c, a, learning_rate))
 						
 				# make test and evaluate validation accuracy
 				if step % test_step == 0:
-					val_im, val_cls = tu.read_validation_batch(batch_size, os.path.join(imagenet_path, 'ILSVRC2012_img_val'), os.path.join(imagenet_path, 'data/ILSVRC2012_validation_ground_truth.txt'))
+					val_im, val_cls = tu.read_validation_batch(batch_size, os.path.join(imagenet_path, 'val'), os.path.join(imagenet_path, 'data\\ILSVRC2012_validation_ground_truth.txt'))
 					v_a = sess.run(accuracy, feed_dict={x_b: val_im, y_b: val_cls, lr: learning_rate, keep_prob: 1.0})
 					# intermediate time
 					int_time = time.time()
 					print ('Elapsed time: {}'.format(tu.format_time(int_time - start_time)))
 					print ('Validation accuracy: {:.04f}'.format(v_a))
 					# save weights to file
-					save_path = saver.save(sess, os.path.join(ckpt_path, 'alexnet-cnn.ckpt'))
+					save_path = saver.save(sess, os.path.join(ckpt_path, 'alexnet-cnn.ckpt'), global_step=step)
 					print('Variables saved in file: %s' % save_path)
 
 		end_time = time.time()
 		print ('Elapsed time: {}'.format(tu.format_time(end_time - start_time)))
-		save_path = saver.save(sess, os.path.join(ckpt_path, 'alexnet-cnn.ckpt'))
+		save_path = saver.save(sess, os.path.join(ckpt_path, 'alexnet-cnn.ckpt'), global_step=step)
 		print('Variables saved in file: %s' % save_path)
 
 		coord.request_stop()
@@ -155,25 +158,25 @@ def train(
 if __name__ == '__main__':
 	DROPOUT = 0.5
 	MOMENTUM = 0.9
-	LAMBDA = 5e-04 # for weight decay
-	LEARNING_RATE = 1e-03
+	LAMBDA = 5e-4 # for weight decay
+	LEARNING_RATE = 1e-3
 	EPOCHS = 90
 	BATCH_SIZE = 128
-	CKPT_PATH = 'ckpt-alexnet'
-	if not os.path.exists(CKPT_PATH):
-		os.makedirs(CKPT_PATH)
-	SUMMARY = 'summary'
-	if not os.path.exists(SUMMARY):
-		os.makedirs(SUMMARY)
+	CKPT_PATH = ''
+	#if not os.path.exists(CKPT_PATH):
+	#	os.makedirs(CKPT_PATH)
+	SUMMARY = ''
+	#if not os.path.exists(SUMMARY):
+	#	os.makedirs(SUMMARY)
 
-	IMAGENET_PATH = 'ILSVRC2012'
-	DISPLAY_STEP = 10
-	TEST_STEP = 500
+	IMAGENET_PATH = ''
+	DISPLAY_STEP = 20
+	TEST_STEP = 10000
 	
-	if sys.argv[1] == '-resume':
+	if len(sys.argv)==1:
+		resume=False
+	elif sys.argv[1] == '-resume':
 		resume = True
-	elif sys.argv[1] == '-scratch': 
-		resume = False
 
 	train(
 		EPOCHS, 
