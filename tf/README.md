@@ -10,11 +10,12 @@ python train.py option
 Without options to train the model from scratch or ```-resume``` to resume the training from a checkpoint (modify by user @train.py).
 
 User may change the intermediate checkpoint numbers by max_to_keep=###.
-
+```
 The checkpoint format should be three files:
     alexnet-cnn.ckpt-#####.index
     alexnet-cnn.ckpt-#####.meta
     alexnet-cnn.ckpt-#####.data-00000-of-00001
+```
 
 ### Testing
 To evaluate the accuracy of the trained model I used the ILSVRC validation set (no test set is available). Run simply:
