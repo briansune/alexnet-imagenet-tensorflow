@@ -22,12 +22,12 @@ Inside the script you can also play with the ```K_CROPS``` parameter to see how 
 ```train.py``` and ```test.py``` scripts assume that ImageNet dataset folder is structured in this way:
 ```
 ILSVRC2012
-    ILSVRC2012_img_train
+    train
         n01440764
         n01443537
         n01484850
         ...
-    ILSVRC2012_img_val
+    val
         ILSVRC2012_val_00000001.JPEG
         ILSVRC2012_val_00000002.JPEG
         ...
