@@ -29,8 +29,8 @@ def test(
 		ckpt_path:	path to model's tensorflow checkpoint
 	"""
 
-	test_images = sorted(os.listdir(os.path.join(imagenet_path, 'ILSVRC2012_img_val')))
-	test_labels = tu.read_test_labels(os.path.join(imagenet_path, 'data/ILSVRC2012_validation_ground_truth.txt'))
+	test_images = sorted(os.listdir(os.path.join(imagenet_path, 'val')))
+	test_labels = tu.read_test_labels(os.path.join(imagenet_path, 'data\\ILSVRC2012_validation_ground_truth.txt'))
 
 	test_examples = len(test_images)
 	
@@ -50,16 +50,19 @@ def test(
 	topk_accuracy = tf.reduce_mean(tf.cast(topk_correct, tf.float32))
 
 	saver = tf.train.Saver()
+	
+	config = tf.ConfigProto(allow_soft_placement=True,log_device_placement=False)
+	config.gpu_options.allow_growth = True
 
-	with tf.Session(config=tf.ConfigProto()) as sess:
-		saver.restore(sess, os.path.join(ckpt_path, 'alexnet-cnn.ckpt'))
+	with tf.Session(config=config) as sess:
+		saver.restore(sess, os.path.join(ckpt_path, 'alexnet-cnn.ckpt-########'))
 
 		total_top1_accuracy = 0.
 		total_topk_accuracy = 0.
 
 		for i in range(test_examples):
 			# taking a few patches from an image
-			image_patches = tu.read_k_patches(os.path.join(imagenet_path, 'ILSVRC2012_img_val', test_images[i]), k_patches)
+			image_patches = tu.read_k_patches(os.path.join(imagenet_path, 'val', test_images[i]), k_patches)
 			label = test_labels[i]
 
 			top1_a, topk_a = sess.run([top1_accuracy, topk_accuracy], feed_dict={x: image_patches, y: [label]})
@@ -77,9 +80,8 @@ if __name__ == '__main__':
 	TOP_K = 5
 	K_PATCHES = 5
 	DISPLAY_STEP = 10
-	IMAGENET_PATH = 'ILSVRC2012'
-	CKPT_PATH = 'ckpt-alexnet'
-
+	IMAGENET_PATH = '#########'
+	CKPT_PATH = '#########'
 	test( 
 		TOP_K, 
 		K_PATCHES, 
