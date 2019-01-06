@@ -1,8 +1,8 @@
 """
 Written by Matteo Dunnhofer - 2017
-
 models training on ImageNet
 """
+
 import sys
 import os.path
 import time
@@ -90,15 +90,20 @@ def train(
 	saver = tf.train.Saver(max_to_keep=5)
 
 	coord = tf.train.Coordinator()
-	
+
+	#init = tf.initialize_all_variables()
 	init = tf.global_variables_initializer()
 	
 	config = tf.ConfigProto(allow_soft_placement=True,log_device_placement=False)
 	config.gpu_options.allow_growth = True
 
 	with tf.Session(config=config) as sess:
+		
+		resume_flag = 0
+		
 		if resume:
-			saver.restore(sess, os.path.join(ckpt_path, 'alexnet-cnn.ckpt-#####'))
+			saver.restore(sess, os.path.join(ckpt_path, 'alexnet-cnn.ckpt-##############'))
+			resume_flag = 1
 		else:
 			sess.run(init)
 
@@ -109,7 +114,7 @@ def train(
 				sess.run(enqueue_op, feed_dict={x: im,y: l})
 
 		# creating and starting parallel threads to fill the queue
-		num_threads = 12
+		num_threads = 8
 		for i in range(num_threads):
 			t = threading.Thread(target=enqueue_batches)
 			t.setDaemon(True)
@@ -124,7 +129,15 @@ def train(
 
 				_, step = sess.run([optimizer, global_step], feed_dict={lr: learning_rate, keep_prob: dropout})
 				#train_writer.add_summary(summary, step)
-
+				
+				if resume_flag == 1:
+					resume_flag = 0
+					if step >= 350000:
+						learning_rate = learning_rate / 100
+					else:
+						if step >= 170000:
+							learning_rate = learning_rate / 10
+				
 				# decaying learning rate
 				if step == 170000 or step == 350000:
 					learning_rate = learning_rate / 10
@@ -158,18 +171,18 @@ def train(
 if __name__ == '__main__':
 	DROPOUT = 0.5
 	MOMENTUM = 0.9
-	LAMBDA = 5e-4 # for weight decay
+	LAMBDA = 5e-04 # for weight decay
 	LEARNING_RATE = 1e-3
 	EPOCHS = 90
 	BATCH_SIZE = 128
-	CKPT_PATH = ''
+	CKPT_PATH = '########################'
 	#if not os.path.exists(CKPT_PATH):
 	#	os.makedirs(CKPT_PATH)
-	SUMMARY = ''
+	SUMMARY = '########################'
 	#if not os.path.exists(SUMMARY):
 	#	os.makedirs(SUMMARY)
 
-	IMAGENET_PATH = ''
+	IMAGENET_PATH = '########################'
 	DISPLAY_STEP = 20
 	TEST_STEP = 10000
 	
