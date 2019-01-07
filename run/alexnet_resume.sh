@@ -7,5 +7,5 @@ LOGS=######/Tensorflow_Log/log
 
 GLOG_logtostderr=0 \
 GLOG_log_dir=$INFO \
-python -u train.py -resume > $LOGS/alexnet_train_######.log 2>&1 \
+python -u ../train.py -resume > $LOGS/alexnet_train_######.log 2>&1 \
 $@
