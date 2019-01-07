@@ -2,10 +2,10 @@
 set -e
 
 
-INFO=/H/Tensorflow_Log/tensor_info
-LOGS=/H/Tensorflow_Log/log
+INFO=######/Tensorflow_Log/tensor_info
+LOGS=######/Tensorflow_Log/log
 
 GLOG_logtostderr=0 \
 GLOG_log_dir=$INFO \
-python -u train.py > $LOGS/alexnet_train.log 2>&1 \
+python -u ../train.py > $LOGS/alexnet_train_######.log 2>&1 \
 $@
