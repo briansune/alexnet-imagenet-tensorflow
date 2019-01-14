@@ -1,4 +1,5 @@
 # AlexNet training on ImageNet LSVRC 2012
+# This is trageted Windows platform and used shell scripts.
 
 This repository contains an implementation of AlexNet convolutional neural network and its training and testing procedures on the ILSVRC 2012 dataset, all using TensorFlow. 
 
